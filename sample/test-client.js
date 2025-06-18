@@ -67,7 +67,9 @@ async function cli() {
 
 
 async function run( config ) {
-	var client = new UniProtocol() ;
+	var client = new UniProtocol( {
+		maxPacketSize: UniProtocol.IPv4_MTU
+	} ) ;
 	//console.log( "UniClient:" , client ) ;
 
 	client.startClient() ;
@@ -82,10 +84,19 @@ async function run( config ) {
 	var message = client.createMessage( 'C' , 'hrtB' ) ;
 	client.send( message , dest ) ;
 
-	await Promise.resolveTimeout( 1000 ) ;
+	/*
+	await Promise.resolveTimeout( 500 ) ;
 
 	var data = { game: "mysupagame" , map: "dm_fort" , maxClients: 32 , humans: 5 , bots: 3 } ;
 	message = client.createMessageWithAck( 'C' , 'srvI' , undefined , data , true ) ;
+	await client.send( message , dest ) ;
+	term( "Received ack!\n" ) ;
+	//*/
+
+	await Promise.resolveTimeout( 500 ) ;
+
+	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
+	message = client.createMessageWithAck( 'C' , 'bigD' , undefined , data ) ;
 	await client.send( message , dest ) ;
 	term( "Received ack!\n" ) ;
 }

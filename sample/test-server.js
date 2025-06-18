@@ -66,7 +66,8 @@ async function cli() {
 
 async function run( config ) {
 	var server = new UniProtocol( {
-		serverPort: config.port
+		serverPort: config.port ,
+		maxPacketSize: UniProtocol.IPv4_MTU
 	} ) ;
 	//console.log( "UniServer:" , server ) ;
 
