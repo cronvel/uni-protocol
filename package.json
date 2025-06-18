@@ -1,0 +1,41 @@
+{
+  "name": "uni-protocol",
+  "version": "0.0.1",
+  "description": "UDP-based flexible protocol and facilities.",
+  "main": "lib/UniProtocol.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "jsbindat": "^0.11.2",
+    "logfella": "^2.1.0",
+    "nextgen-events": "^1.5.3",
+    "seventh": "^0.9.3"
+  },
+  "scripts": {
+    "test": "tea-time -R dot"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cronvel/uni-protocol.git"
+  },
+  "keywords": [
+    "udp",
+    "protocol"
+  ],
+  "author": "Cédric Ronvel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cronvel/uni-protocol/issues"
+  },
+  "copyright": {
+    "title": "UniProtocol",
+    "years": [
+      2025
+    ],
+    "owner": "Cédric Ronvel"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

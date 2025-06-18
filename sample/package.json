@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "string-kit": "^0.19.2",
+    "terminal-kit": "^3.1.2",
+    "utterminal": "^0.7.3"
+  }
+}
