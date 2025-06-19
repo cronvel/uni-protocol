@@ -53,7 +53,7 @@ async function cli() {
 		.camel
 		.description( "Test UniProtocol server." )
 		.arg( 'server' ).string.mandatory
-			.description( "The server to listen." )
+			.description( "The server to connect to." )
 		.arg( 'port' ).number.mandatory
 			.description( "The port to listen." ) ;
 	/* eslint-enable indent */
