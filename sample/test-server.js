@@ -75,7 +75,14 @@ async function run( config ) {
 
 	server.on( 'message' , message => {
 		message.decodeData() ;
-		term( "Received message: %J\n" , message ) ;
+		term( "Received message: %s\n" , message.debugStr() ) ;
+
+		if ( message.command === 'hrtB' ) {
+			setTimeout( () => {
+				let response = server.createMessage( 'C' , 'helo' ) ;
+				server.send( response , message.sender ) ;
+			} , 1000 ) ;
+		}
 	} ) ;
 }
 

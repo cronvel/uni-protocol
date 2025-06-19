@@ -76,7 +76,7 @@ async function run( config ) {
 	
 	client.on( 'message' , message => {
 		message.decodeData() ;
-		term( "Received message: %Y\n" ) ;
+		term( "Received message: %s\n" , message.debugStr() ) ;
 	} ) ;
 	
 	var dest = { address: config.server , port: config.port } ;
