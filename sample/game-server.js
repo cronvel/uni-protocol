@@ -26,11 +26,13 @@
 */
 "use strict" ;
 
-//const os = require( 'os' ) ;
 //const path = require( 'path' ) ;
 //const fs = require( 'fs' ) ;
 
-const UniProtocol = require( '../lib/UniProtocol' ) ;
+const os = require( 'os' ) ;
+const ip = require( 'ip' ) ;
+
+const UniProtocol = require( '..' ) ;
 
 const string = require( 'string-kit' ) ;
 const Promise = require( 'seventh' ) ;
@@ -52,9 +54,7 @@ async function cli() {
 		.helpOption.logOptions
 		.camel
 		.description( "Test UniProtocol server." )
-		.arg( 'server' ).string.mandatory
-			.description( "The server to connect to." )
-		.arg( 'port' ).number.mandatory
+		.arg( 'port' ).number
 			.description( "The port to listen." ) ;
 	/* eslint-enable indent */
 
@@ -67,38 +67,28 @@ async function cli() {
 
 
 async function run( config ) {
-	var client = new UniProtocol( {
+	term( "My IP: %s\n" , ip.address() ) ;
+	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
+
+	var server = new UniProtocol( {
+		serverPort: config.port ,
 		maxPacketSize: UniProtocol.IPv4_MTU
 	} ) ;
-	//console.log( "UniClient:" , client ) ;
+	//console.log( "UniServer:" , server ) ;
 
-	client.startClient() ;
-	
-	client.on( 'message' , message => {
+	server.startServer() ;
+
+	server.on( 'message' , message => {
 		message.decodeData() ;
 		term( "Received message: %s\n" , message.debugStr() ) ;
+
+		if ( message.command === 'hrtB' ) {
+			setTimeout( () => {
+				let response = server.createMessageWithAck( 'C' , 'helo' ) ;
+				server.send( response , message.sender ) ;
+			} , 1000 ) ;
+		}
 	} ) ;
-	
-	var dest = { address: config.server , port: config.port } ;
-	
-	var message = client.createMessage( 'C' , 'hrtB' ) ;
-	client.send( message , dest ) ;
-
-	/*
-	await Promise.resolveTimeout( 500 ) ;
-
-	var data = { game: "mysupagame" , map: "dm_fort" , maxClients: 32 , humans: 5 , bots: 3 } ;
-	message = client.createMessageWithAck( 'C' , 'srvI' , undefined , data , true ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
-	//*/
-
-	await Promise.resolveTimeout( 500 ) ;
-
-	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
-	message = client.createMessageWithAck( 'C' , 'bigD' , undefined , data ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
 }
 
 

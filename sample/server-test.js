@@ -26,11 +26,13 @@
 */
 "use strict" ;
 
-//const os = require( 'os' ) ;
 //const path = require( 'path' ) ;
 //const fs = require( 'fs' ) ;
 
-const UniProtocol = require( '../lib/UniProtocol' ) ;
+const os = require( 'os' ) ;
+const ip = require( 'ip' ) ;
+
+const UniProtocol = require( '..' ) ;
 
 const string = require( 'string-kit' ) ;
 const Promise = require( 'seventh' ) ;
@@ -52,10 +54,8 @@ async function cli() {
 		.helpOption.logOptions
 		.camel
 		.description( "Test UniProtocol server." )
-		.arg( 'startPort' ).number.mandatory
-			.description( "The starting port to scan." )
-		.arg( 'endPort' ).number
-			.description( "The ending port (included) to scan." ) ;
+		.arg( 'port' ).number
+			.description( "The port to listen." ) ;
 	/* eslint-enable indent */
 
 	var args = cliManager.run() ;
@@ -67,25 +67,28 @@ async function cli() {
 
 
 async function run( config ) {
-	var client = new UniProtocol( {
+	term( "My IP: %s\n" , ip.address() ) ;
+	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
+
+	var server = new UniProtocol( {
+		serverPort: config.port ,
 		maxPacketSize: UniProtocol.IPv4_MTU
 	} ) ;
-	//console.log( "UniClient:" , client ) ;
+	//console.log( "UniServer:" , server ) ;
 
-	client.startClient() ;
-	
-	var foundList = await client.discover( config.startPort , config.endPort || undefined ) ;
+	server.startServer() ;
 
-	if ( ! foundList.length ) {
-		term.red( "Nothing found.\n" ) ;
-		return ;
-	}
+	server.on( 'message' , message => {
+		message.decodeData() ;
+		term( "Received message: %s\n" , message.debugStr() ) ;
 
-	term( "Found: \n" ) ;
-
-	for ( let dest of foundList ) {
-		term( "\t[%s]:%i\n" , dest.address , dest.port ) ;
-	}
+		if ( message.command === 'hrtB' ) {
+			setTimeout( () => {
+				let response = server.createMessageWithAck( 'C' , 'helo' ) ;
+				server.send( response , message.sender ) ;
+			} , 1000 ) ;
+		}
+	} ) ;
 }
 
 
