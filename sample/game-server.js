@@ -34,6 +34,8 @@ const ip = require( 'ip' ) ;
 
 const UniProtocol = require( '..' ) ;
 
+const gameData = require( './game-data.js' ) ;
+
 const string = require( 'string-kit' ) ;
 const Promise = require( 'seventh' ) ;
 
@@ -66,13 +68,27 @@ async function cli() {
 
 
 
+const GAMESTATE = [
+	{ id: 'alice' , position: { x: 2.5 , y: 1.25 , z: 0 } , speed: { x: 5 , y: 3.5 , z: 0 } , health: 100 } ,
+	{ id: 'bob' , position: { x: 12 , y: 14 , z: 0 } , speed: { x: 0 , y: 0 , z: 0 } , health: 85 }
+] ;
+
+
+
 async function run( config ) {
 	term( "My IP: %s\n" , ip.address() ) ;
 	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
 
 	var server = new UniProtocol( {
 		serverPort: config.port ,
-		maxPacketSize: UniProtocol.IPv4_MTU
+		maxPacketSize: UniProtocol.IPv4_MTU ,
+		binaryDataParams: {
+			perCommand: {
+				Rstat: {
+					model: gameData.gameState
+				}
+			}
+		}
 	} ) ;
 	//console.log( "UniServer:" , server ) ;
 
@@ -82,11 +98,10 @@ async function run( config ) {
 		message.decodeData() ;
 		term( "Received message: %s\n" , message.debugStr() ) ;
 
-		if ( message.command === 'hrtB' ) {
-			setTimeout( () => {
-				let response = server.createMessageWithAck( 'C' , 'helo' ) ;
-				server.send( response , message.sender ) ;
-			} , 1000 ) ;
+		if ( message.type === 'Q' && message.command === 'stat' ) {
+			
+			let response = server.createMessageWithAck( 'R' , 'stat' , undefined , GAMESTATE ) ;
+			server.send( response , message.sender ) ;
 		}
 	} ) ;
 }

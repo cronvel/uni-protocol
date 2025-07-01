@@ -44,7 +44,7 @@ const entityModel = exports.entity = new DataModel.SealedObject( [
 	[ 'id' , 'lps8string' ] ,
 	[ 'position' , vector3d ] ,
 	[ 'speed' , vector3d ] ,
-	[ 'health' , 'float32' ]
+	[ 'health' , 'uint8' ]
 ] ) ;
 
 const gameState = exports.gameState = new DataModel.TypedArray( entityModel ) ;

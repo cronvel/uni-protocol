@@ -32,6 +32,8 @@
 
 const UniProtocol = require( '..' ) ;
 
+const gameData = require( './game-data.js' ) ;
+
 const string = require( 'string-kit' ) ;
 const Promise = require( 'seventh' ) ;
 
@@ -69,9 +71,11 @@ async function cli() {
 async function run( config ) {
 	var client = new UniProtocol( {
 		maxPacketSize: UniProtocol.IPv4_MTU ,
-		perCommandBinaryDataParams: {
-			Cstat: {
-				
+		binaryDataParams: {
+			perCommand: {
+				Rstat: {
+					model: gameData.gameState
+				}
 			}
 		}
 	} ) ;
@@ -86,24 +90,9 @@ async function run( config ) {
 	
 	var dest = { address: config.server , port: config.port } ;
 	
-	var message = client.createMessage( 'C' , 'hrtB' ) ;
-	client.send( message , dest ) ;
-
-	/*
-	await Promise.resolveTimeout( 500 ) ;
-
-	var data = { game: "mysupagame" , map: "dm_fort" , maxClients: 32 , humans: 5 , bots: 3 } ;
-	message = client.createMessageWithAck( 'C' , 'srvI' , undefined , data , true ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
-	//*/
-
-	await Promise.resolveTimeout( 500 ) ;
-
 	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
-	message = client.createMessageWithAck( 'C' , 'bigD' , undefined , data ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
+	var message = client.createMessage( 'Q' , 'stat' ) ;
+	client.send( message , dest ) ;
 }
 
 
