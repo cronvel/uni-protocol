@@ -54,9 +54,9 @@ async function cli() {
 		.helpOption.logOptions
 		.camel
 		.description( "Test UniProtocol server." )
-		.arg( 'server' ).string.mandatory
+		.arg( 'server' , '127.0.0.1' ).string.mandatory
 			.description( "The server to connect to." )
-		.arg( 'port' ).number.mandatory
+		.arg( 'port' , 1234 ).number.mandatory
 			.description( "The port to listen." ) ;
 	/* eslint-enable indent */
 
