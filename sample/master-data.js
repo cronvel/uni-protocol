@@ -41,6 +41,6 @@ const ipv6List = exports.ipv6List = new DataModel.TypedArray( ipv6 ) ;
 
 const serverList = exports.serverList = new DataModel.SealedObject( [
 	[ 'ipv4List' , ipv4List ] ,
-	[ 'ipv6list' , ipv6List ]
+	[ 'ipv6List' , ipv6List ]
 ] ) ;
 

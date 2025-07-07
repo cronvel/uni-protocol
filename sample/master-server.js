@@ -24,6 +24,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 */
+
 "use strict" ;
 
 //const path = require( 'path' ) ;
@@ -101,6 +102,8 @@ UniMaster.prototype.start = function() {
 		term( "Received message: %s\n" , message.debugStr() ) ;
 
 		switch ( message.type + message.command ) {
+			case 'ChrtB' :
+				return this.heartBeat( message ) ;
 			case 'Qserv' :
 				return this.sendServerList( message ) ;
 		}
@@ -110,7 +113,8 @@ UniMaster.prototype.start = function() {
 
 
 UniMaster.prototype.sendServerList = function( message ) {
-	var serverList = { ipv4List: [] , ipv6List: [] } ;
+	//var serverList = { ipv4List: [] , ipv6List: [] } ;
+	var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
 
 	for ( let [ id , serverData ] of this.serverMap ) {
 
@@ -124,8 +128,8 @@ UniMaster.prototype.sendServerList = function( message ) {
 		}
 	}
 
-	let response = server.createMessage( 'R' , 'serv' , undefined , serverList ) ;
-	server.send( response , message.sender ) ;
+	let response = this.masterServer.createMessage( 'R' , 'serv' , undefined , serverList ) ;
+	this.masterServer.send( response , message.sender ) ;
 } ;
 
 

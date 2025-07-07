@@ -24,6 +24,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 */
+
 "use strict" ;
 
 //const os = require( 'os' ) ;
@@ -91,8 +92,7 @@ async function run( config ) {
 	
 	var dest = { address: config.server , port: config.port } ;
 	
-	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
-	var message = client.createMessage( 'Q' , 'stat' ) ;
+	var message = client.createMessage( 'Q' , 'serv' ) ;
 	client.send( message , dest ) ;
 }
 
