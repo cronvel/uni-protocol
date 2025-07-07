@@ -34,8 +34,8 @@ const ClassMap = UniProtocol.ClassMap ;
 
 
 
-const ipv4 = exports.ipv4 = new DataModel.FixedTypedArray( 'uint8' , 4 ) ;
-const ipv6 = exports.ipv6 = new DataModel.FixedTypedArray( 'uint8' , 16 ) ;
+const ipv4 = exports.ipv4 = new DataModel.FixedTypedArray( 'uint8' , 6 ) ;
+const ipv6 = exports.ipv6 = new DataModel.FixedTypedArray( 'uint8' , 18 ) ;
 const ipv4List = exports.ipv4List = new DataModel.TypedArray( ipv4 ) ;
 const ipv6List = exports.ipv6List = new DataModel.TypedArray( ipv6 ) ;
 

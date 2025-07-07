@@ -88,12 +88,50 @@ async function run( config ) {
 	client.on( 'message' , message => {
 		message.decodeData() ;
 		term( "Received message: %s\n" , message.debugStr() ) ;
+
+		switch ( message.type + message.command ) {
+			case 'Rserv' : {
+				let serverList = toServerList( message.decodeData() ) ;
+				displayServers( serverList ) ;
+				break ;
+			}
+		}
 	} ) ;
 	
 	var dest = { address: config.server , port: config.port } ;
 	
 	var message = client.createMessage( 'Q' , 'serv' ) ;
 	client.send( message , dest ) ;
+}
+
+
+
+const ip = require( 'ip' ) ;
+
+function toServerList( data ) {
+	var serverList = [] ;
+
+	for ( let serverArray of data.ipv4List ) {
+		let serverBuffer = Buffer.from( serverArray ) ;
+		let ipv4 = ip.toString( serverBuffer , 0 , 4 ) ;
+		let port = serverBuffer.readUInt16BE( 4 ) ;
+		serverList.push( { ipv4 , port } ) ;
+	}
+
+	for ( let serverArray of data.ipv6List ) {
+		let serverBuffer = Buffer.from( serverArray ) ;
+		let ipv6 = ip.toString( serverBuffer , 0 , 16 ) ;
+		let port = serverBuffer.readUInt16BE( 16 ) ;
+		serverList.push( { ipv6 , port } ) ;
+	}
+
+	return serverList ;
+}
+
+
+
+function displayServers( serverList ) {
+	console.log( serverList ) ;
 }
 
 

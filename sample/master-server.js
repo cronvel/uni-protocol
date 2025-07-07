@@ -102,8 +102,12 @@ UniMaster.prototype.start = function() {
 		term( "Received message: %s\n" , message.debugStr() ) ;
 
 		switch ( message.type + message.command ) {
-			case 'ChrtB' :
-				return this.heartBeat( message ) ;
+			case 'Hhelo' :
+				return this.receiveHello( message ) ;
+			case 'Hbbye' :
+				return this.receiveBye( message ) ;
+			case 'Khrtb' :
+				return this.receiveHeartbeat( message ) ;
 			case 'Qserv' :
 				return this.sendServerList( message ) ;
 		}
@@ -112,9 +116,30 @@ UniMaster.prototype.start = function() {
 
 
 
+/*
+	A server is signaling to the master.
+*/
+UniMaster.prototype.receiveHello = function( message ) {
+	this.addServer( message.sender , {} ) ;
+} ;
+
+
+
+/*
+	A server is signaling its shutdown to the master.
+*/
+UniMaster.prototype.receiveBye = function( message ) {
+	this.removeServer( message.sender ) ;
+} ;
+
+
+
+/*
+	Send a server-list to a client.
+*/
 UniMaster.prototype.sendServerList = function( message ) {
-	//var serverList = { ipv4List: [] , ipv6List: [] } ;
-	var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
+	var serverList = { ipv4List: [] , ipv6List: [] } ;
+	//var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
 
 	for ( let [ id , serverData ] of this.serverMap ) {
 
@@ -134,9 +159,43 @@ UniMaster.prototype.sendServerList = function( message ) {
 
 
 
-UniMaster.prototype.addServer = function( ipString ) {
-	// The ip module allows this:
-	ip.toBuffer( '127.0.0.1' ) ;	// Buffer([127, 0, 0, 1])
+UniMaster.prototype.addServer = function( server , serverInfo ) {
+	console.log( "addServer():" , server , serverInfo ) ;
+	var serverData = {} ,
+		id = UniProtocol.common.getAddressId( server ) ;
+
+	if ( server.family === 'IPv4' ) {
+		let ipBuffer = Buffer.allocUnsafe( 6 ) ;
+		ip.toBuffer( server.address , ipBuffer , 0 ) ;
+		ipBuffer.writeUInt16BE( server.port , 4 ) ;
+		serverData.ipv4 = ipBuffer ;
+	}
+	else if ( server.family === 'IPv6' ) {
+		let ipBuffer = Buffer.allocUnsafe( 18 ) ;
+		ip.toBuffer( server.address , ipBuffer , 0 ) ;
+		ipBuffer.writeUInt16BE( server.port , 16 ) ;
+		serverData.ipv6 = ipBuffer ;
+	}
+
+	//serverData.hostname = typeof serverInfo.hostname === 'string' ? serverInfo.hostname : '' ;
+	serverData.app = typeof serverInfo.app === 'string' ? serverInfo.app : '' ;
+	serverData.mod = typeof serverInfo.mod === 'string' ? serverInfo.mod : '' ;
+	serverData.protocol = + serverInfo.protocol || 0 ;
+	serverData.hasPassword = !! serverInfo.hasPassword ;
+	serverData.humans = + serverInfo.humans || 0 ;
+	serverData.bots = + serverInfo.bots || 0 ;
+	serverData.maxClients = + serverInfo.maxClients || 0 ;
+
+	this.serverMap.set( id , serverData ) ;
+	console.log( "Added server:" , id , serverData ) ;
+} ;
+
+
+
+UniMaster.prototype.removeServer = function( server , serverInfo ) {
+	var id = UniProtocol.common.getAddressId( server ) ;
+	this.serverMap.delete( id ) ;
+	console.log( "Removed server" , id ) ;
 } ;
 
 

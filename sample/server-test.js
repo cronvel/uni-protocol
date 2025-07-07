@@ -82,9 +82,9 @@ async function run( config ) {
 		message.decodeData() ;
 		term( "Received message: %s\n" , message.debugStr() ) ;
 
-		if ( message.command === 'hrtB' ) {
+		if ( message.command === 'hrtb' ) {
 			setTimeout( () => {
-				let response = server.createMessageWithAck( 'C' , 'helo' ) ;
+				let response = server.createMessageWithAck( 'H' , 'helo' ) ;
 				server.send( response , message.sender ) ;
 			} , 1000 ) ;
 		}

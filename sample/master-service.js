@@ -24,6 +24,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 	SOFTWARE.
 */
+
 "use strict" ;
 
 //const os = require( 'os' ) ;
@@ -31,6 +32,8 @@
 //const fs = require( 'fs' ) ;
 
 const UniProtocol = require( '..' ) ;
+
+const masterData = require( './master-data.js' ) ;
 
 const string = require( 'string-kit' ) ;
 const Promise = require( 'seventh' ) ;
@@ -68,7 +71,15 @@ async function cli() {
 
 async function run( config ) {
 	var client = new UniProtocol( {
-		maxPacketSize: UniProtocol.IPv4_MTU
+		protocolSignature: 'UNM' ,
+		maxPacketSize: UniProtocol.IPv4_MTU ,
+		binaryDataParams: {
+			perCommand: {
+				Rserv: {
+					model: masterData.serverList
+				}
+			}
+		}
 	} ) ;
 	//console.log( "UniClient:" , client ) ;
 
@@ -81,24 +92,8 @@ async function run( config ) {
 	
 	var dest = { address: config.server , port: config.port } ;
 	
-	var message = client.createMessage( 'K' , 'hrtb' ) ;
+	var message = client.createMessage( 'H' , 'helo' ) ;
 	client.send( message , dest ) ;
-
-	/*
-	await Promise.resolveTimeout( 500 ) ;
-
-	var data = { game: "mysupagame" , map: "dm_fort" , maxClients: 32 , humans: 5 , bots: 3 } ;
-	message = client.createMessageWithAck( 'C' , 'srvI' , undefined , data , true ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
-	//*/
-
-	await Promise.resolveTimeout( 500 ) ;
-
-	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
-	message = client.createMessageWithAck( 'C' , 'bigD' , undefined , data ) ;
-	await client.send( message , dest ) ;
-	term( "Received ack!\n" ) ;
 }
 
 
