@@ -65,12 +65,12 @@ async function cli() {
 	//console.log( "Args:" , args ) ;
 
 	var masterClient = new UniMasterClient( [ { address: args.server , port: args.port } ] ) ;
-	masterClient.start() ;
+	masterClient.query() ;
 } ;
 
 
 
-function UniMasterClient( masterServerList ) {
+function UniMasterClient( masterServerList , params = {} ) {
 	this.uniClient = new UniProtocol( {
 		protocolSignature: 'UNM' ,
 		maxPacketSize: UniProtocol.IPv4_MTU ,
@@ -83,31 +83,53 @@ function UniMasterClient( masterServerList ) {
 		}
 	} ) ;
 
+	this.masterTimeout = + params.masterTimeout || 2000 ;
 	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
 }
 
 
 
-UniMasterClient.prototype.start = function() {
+UniMasterClient.prototype.query = async function() {
 	this.uniClient.startClient() ;
 	
 	// Debug
 	this.uniClient.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
-	this.uniClient.incoming.on( 'Rserv' , message => {
-		let serverList = toServerList( message.decodeData() ) ;
-		displayServers( serverList ) ;
+	var masterResponseCount = 0 ,
+		serverList = [] ,
+		serverSet = new Set() ;
+
+	var responseList = await Promise.map( this.masterServerList , dest => {
+		var responsePromise = Promise.fromThenable( this.uniClient.query( dest , 'serv' ) ) ;
+		setTimeout( () => responsePromise.resolve( null ) , this.masterTimeout ) ;
+		return responsePromise.then( response => { masterResponseCount ++ ; return response ; } ).catch( () => null ) ;
 	} ) ;
 	
-	for ( let dest of this.masterServerList ) {
-		var message = this.uniClient.createMessage( 'Q' , 'serv' ) ;
-		this.uniClient.sendMessage( dest , message ) ;
+	console.log( masterResponseCount + " response(s) received!" ) ;
+
+	for ( let response of responseList ) {
+		if ( ! response ) { continue ; }
+		let responseServerList = UniMasterClient.toServerList( response.decodeData() ) ;
+
+		for ( let server of responseServerList ) {
+			let serverId ;
+
+			if ( server.ipv4 ) { serverId = server.ipv4 + ':' + server.port ; }
+			else if ( server.ipv6 ) { serverId = '[' + server.ipv6 + ']:' + server.port ; }
+			else { continue ; }
+
+			if ( serverSet.has( serverId ) ) { continue ; }
+			serverSet.add( server ) ;
+			serverList.push( server ) ;
+		}
 	}
+
+	this.displayServers( serverList ) ;
 } ;
 
 
 
-function toServerList( data ) {
+UniMasterClient.toServerList = function( data ) {
 	var serverList = [] ;
 
 	for ( let serverArray of data.ipv4List ) {
@@ -129,7 +151,7 @@ function toServerList( data ) {
 
 
 
-function displayServers( serverList ) {
+UniMasterClient.prototype.displayServers = function( serverList ) {
 	console.log( serverList ) ;
 }
 

@@ -144,7 +144,7 @@ UniMaster.prototype.sendServerList = function( message ) {
 		}
 	}
 
-	let response = this.uniServer.createMessage( 'R' , 'serv' , undefined , serverList ) ;
+	let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
 	this.uniServer.sendMessage( message.sender , response ) ;
 } ;
 
