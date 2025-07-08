@@ -93,7 +93,7 @@ async function run( config ) {
 	var dest = { address: config.server , port: config.port } ;
 	
 	var message = client.createMessage( 'H' , 'helo' ) ;
-	client.send( message , dest ) ;
+	client.sendMessage( dest , message ) ;
 }
 
 

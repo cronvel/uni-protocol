@@ -30,7 +30,6 @@
 //const fs = require( 'fs' ) ;
 
 const os = require( 'os' ) ;
-const ip = require( 'ip' ) ;
 
 const UniProtocol = require( '..' ) ;
 
@@ -67,7 +66,7 @@ async function cli() {
 
 
 async function run( config ) {
-	term( "My IP: %s\n" , ip.address() ) ;
+	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
 	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
 
 	var server = new UniProtocol( {
@@ -85,7 +84,7 @@ async function run( config ) {
 		if ( message.command === 'hrtb' ) {
 			setTimeout( () => {
 				let response = server.createMessageWithAck( 'H' , 'helo' ) ;
-				server.send( response , message.sender ) ;
+				server.sendMessage( message.sender , response ) ;
 			} , 1000 ) ;
 		}
 	} ) ;

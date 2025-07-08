@@ -92,7 +92,7 @@ async function run( config ) {
 	
 	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
 	var message = client.createMessage( 'Q' , 'stat' ) ;
-	client.send( message , dest ) ;
+	client.sendMessage( dest , message ) ;
 }
 
 

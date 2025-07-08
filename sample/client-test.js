@@ -82,14 +82,14 @@ async function run( config ) {
 	var dest = { address: config.server , port: config.port } ;
 	
 	var message = client.createMessage( 'K' , 'hrtb' ) ;
-	client.send( message , dest ) ;
+	client.sendMessage( dest , message ) ;
 
 	/*
 	await Promise.resolveTimeout( 500 ) ;
 
 	var data = { game: "mysupagame" , map: "dm_fort" , maxClients: 32 , humans: 5 , bots: 3 } ;
 	message = client.createMessageWithAck( 'C' , 'srvI' , undefined , data , true ) ;
-	await client.send( message , dest ) ;
+	await client.sendMessage( dest , message ) ;
 	term( "Received ack!\n" ) ;
 	//*/
 
@@ -97,7 +97,7 @@ async function run( config ) {
 
 	var data = "Start: " + ( "a big string, ".repeat( 200 ) ) + "end..." ;
 	message = client.createMessageWithAck( 'C' , 'bigD' , undefined , data ) ;
-	await client.send( message , dest ) ;
+	await client.sendMessage( dest , message ) ;
 	term( "Received ack!\n" ) ;
 }
 

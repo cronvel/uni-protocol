@@ -31,7 +31,6 @@
 //const fs = require( 'fs' ) ;
 
 const os = require( 'os' ) ;
-const ip = require( 'ip' ) ;
 
 const UniProtocol = require( '..' ) ;
 
@@ -71,7 +70,7 @@ async function cli() {
 
 
 function UniMaster( params ) {
-	this.masterServer = new UniProtocol( {
+	this.uniServer = new UniProtocol( {
 		protocolSignature: 'UNM' ,
 		serverPort: params.port || 1234 ,
 		maxPacketSize: UniProtocol.IPv4_MTU ,
@@ -90,29 +89,21 @@ function UniMaster( params ) {
 
 
 UniMaster.prototype.start = function() {
-	term( "My IP: %s\n" , ip.address() ) ;
+	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
 	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
 
 	//console.log( "UniServer:" , server ) ;
 
-	this.masterServer.startServer() ;
+	this.uniServer.startServer() ;
 
-	this.masterServer.on( 'message' , message => {
-		message.decodeData() ;
-		term( "Received message: %s\n" , message.debugStr() ) ;
+	// Debug:
+	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
-		switch ( message.type + message.command ) {
-			case 'Hhelo' :
-				return this.receiveHello( message ) ;
-			case 'Hbbye' :
-				return this.receiveBye( message ) ;
-			case 'Khrtb' :
-				return this.receiveHeartbeat( message ) ;
-			case 'Qserv' :
-				return this.sendServerList( message ) ;
-		}
-	} ) ;
-}
+	this.uniServer.incoming.on( 'Hhelo' , message => this.receiveHello( message ) ) ;
+	this.uniServer.incoming.on( 'Hbbye' , message => this.receiveBye( message ) ) ;
+	this.uniServer.incoming.on( 'Khrtb' , message => this.receiveHeartbeat( message ) ) ;
+	this.uniServer.incoming.on( 'Qserv' , message => this.sendServerList( message ) ) ;
+} ;
 
 
 
@@ -153,8 +144,8 @@ UniMaster.prototype.sendServerList = function( message ) {
 		}
 	}
 
-	let response = this.masterServer.createMessage( 'R' , 'serv' , undefined , serverList ) ;
-	this.masterServer.send( response , message.sender ) ;
+	let response = this.uniServer.createMessage( 'R' , 'serv' , undefined , serverList ) ;
+	this.uniServer.sendMessage( message.sender , response ) ;
 } ;
 
 
@@ -166,13 +157,13 @@ UniMaster.prototype.addServer = function( server , serverInfo ) {
 
 	if ( server.family === 'IPv4' ) {
 		let ipBuffer = Buffer.allocUnsafe( 6 ) ;
-		ip.toBuffer( server.address , ipBuffer , 0 ) ;
+		UniProtocol.ip.toBuffer( server.address , ipBuffer , 0 ) ;
 		ipBuffer.writeUInt16BE( server.port , 4 ) ;
 		serverData.ipv4 = ipBuffer ;
 	}
 	else if ( server.family === 'IPv6' ) {
 		let ipBuffer = Buffer.allocUnsafe( 18 ) ;
-		ip.toBuffer( server.address , ipBuffer , 0 ) ;
+		UniProtocol.ip.toBuffer( server.address , ipBuffer , 0 ) ;
 		ipBuffer.writeUInt16BE( server.port , 16 ) ;
 		serverData.ipv6 = ipBuffer ;
 	}

@@ -64,13 +64,14 @@ async function cli() {
 	var args = cliManager.run() ;
 	//console.log( "Args:" , args ) ;
 
-	run( args ) ;
+	var masterClient = new UniMasterClient( [ { address: args.server , port: args.port } ] ) ;
+	masterClient.start() ;
 } ;
 
 
 
-async function run( config ) {
-	var client = new UniProtocol( {
+function UniMasterClient( masterServerList ) {
+	this.uniClient = new UniProtocol( {
 		protocolSignature: 'UNM' ,
 		maxPacketSize: UniProtocol.IPv4_MTU ,
 		binaryDataParams: {
@@ -81,46 +82,44 @@ async function run( config ) {
 			}
 		}
 	} ) ;
-	//console.log( "UniClient:" , client ) ;
 
-	client.startClient() ;
-	
-	client.on( 'message' , message => {
-		message.decodeData() ;
-		term( "Received message: %s\n" , message.debugStr() ) ;
-
-		switch ( message.type + message.command ) {
-			case 'Rserv' : {
-				let serverList = toServerList( message.decodeData() ) ;
-				displayServers( serverList ) ;
-				break ;
-			}
-		}
-	} ) ;
-	
-	var dest = { address: config.server , port: config.port } ;
-	
-	var message = client.createMessage( 'Q' , 'serv' ) ;
-	client.send( message , dest ) ;
+	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
 }
 
 
 
-const ip = require( 'ip' ) ;
+UniMasterClient.prototype.start = function() {
+	this.uniClient.startClient() ;
+	
+	// Debug
+	this.uniClient.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
+
+	this.uniClient.incoming.on( 'Rserv' , message => {
+		let serverList = toServerList( message.decodeData() ) ;
+		displayServers( serverList ) ;
+	} ) ;
+	
+	for ( let dest of this.masterServerList ) {
+		var message = this.uniClient.createMessage( 'Q' , 'serv' ) ;
+		this.uniClient.sendMessage( dest , message ) ;
+	}
+} ;
+
+
 
 function toServerList( data ) {
 	var serverList = [] ;
 
 	for ( let serverArray of data.ipv4List ) {
 		let serverBuffer = Buffer.from( serverArray ) ;
-		let ipv4 = ip.toString( serverBuffer , 0 , 4 ) ;
+		let ipv4 = UniProtocol.ip.toString( serverBuffer , 0 , 4 ) ;
 		let port = serverBuffer.readUInt16BE( 4 ) ;
 		serverList.push( { ipv4 , port } ) ;
 	}
 
 	for ( let serverArray of data.ipv6List ) {
 		let serverBuffer = Buffer.from( serverArray ) ;
-		let ipv6 = ip.toString( serverBuffer , 0 , 16 ) ;
+		let ipv6 = UniProtocol.ip.toString( serverBuffer , 0 , 16 ) ;
 		let port = serverBuffer.readUInt16BE( 16 ) ;
 		serverList.push( { ipv6 , port } ) ;
 	}

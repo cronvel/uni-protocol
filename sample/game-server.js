@@ -30,7 +30,6 @@
 //const fs = require( 'fs' ) ;
 
 const os = require( 'os' ) ;
-const ip = require( 'ip' ) ;
 
 const UniProtocol = require( '..' ) ;
 
@@ -76,7 +75,7 @@ const GAMESTATE = [
 
 
 async function run( config ) {
-	term( "My IP: %s\n" , ip.address() ) ;
+	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
 	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
 
 	var server = new UniProtocol( {
@@ -101,7 +100,7 @@ async function run( config ) {
 		if ( message.type === 'Q' && message.command === 'stat' ) {
 			
 			let response = server.createMessageWithAck( 'R' , 'stat' , undefined , GAMESTATE ) ;
-			server.send( response , message.sender ) ;
+			server.sendMessage( message.sender , response ) ;
 		}
 	} ) ;
 }
