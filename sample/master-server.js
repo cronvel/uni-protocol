@@ -78,6 +78,12 @@ function UniMaster( params ) {
 			perCommand: {
 				Rserv: {
 					model: masterData.serverList
+				} ,
+				Rinfo: {
+					referenceStrings: true ,
+					initialStringReferences: [
+						'service' , 'mod' , 'protocol' , 'hasPassword' , 'humans' , 'bots' , 'maxClients'
+					]
 				}
 			}
 		}
@@ -144,8 +150,9 @@ UniMaster.prototype.sendServerList = function( message ) {
 		}
 	}
 
-	let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
-	this.uniServer.sendMessage( message.sender , response ) ;
+	//let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
+	//this.uniServer.sendMessage( message.sender , response ) ;
+	this.uniServer.sendResponseFor( message , serverList ) ;
 } ;
 
 

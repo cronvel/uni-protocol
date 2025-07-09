@@ -64,37 +64,9 @@ async function cli() {
 	var args = cliManager.run() ;
 	//console.log( "Args:" , args ) ;
 
-	run( args ) ;
+	var masterServiceProvider = new UniMasterServiceProvider( [ { address: args.server , port: args.port } ] ) ;
+	masterServiceProvider.start() ;
 } ;
-
-
-
-async function run( config ) {
-	var client = new UniProtocol( {
-		protocolSignature: 'UNM' ,
-		maxPacketSize: UniProtocol.IPv4_MTU ,
-		binaryDataParams: {
-			perCommand: {
-				Rserv: {
-					model: masterData.serverList
-				}
-			}
-		}
-	} ) ;
-	//console.log( "UniClient:" , client ) ;
-
-	client.startClient() ;
-	
-	client.on( 'message' , message => {
-		message.decodeData() ;
-		term( "Received message: %s\n" , message.debugStr() ) ;
-	} ) ;
-	
-	var dest = { address: config.server , port: config.port } ;
-	
-	var message = client.createMessage( 'H' , 'helo' ) ;
-	client.sendMessage( dest , message ) ;
-}
 
 
 
@@ -118,11 +90,12 @@ function UniMasterServiceProvider( masterServerList , params = {} ) {
 	//this.masterTimeout = + params.masterTimeout || 2000 ;
 	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
 	this.serverInfo = params.serverInfo || {} ;
+	this.notifyTimer = null ;
 }
 
 
 
-UniMaster.prototype.start = function() {
+UniMasterServiceProvider.prototype.start = function() {
 	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
 	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
 
@@ -134,14 +107,16 @@ UniMaster.prototype.start = function() {
 	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
 	this.uniServer.incoming.on( 'Qinfo' , message => this.sendServerInfo( message ) ) ;
+
+	this.notifyTimer = setInterval( () => this.notifyMasterServers() , 5000 ) ;
 } ;
 
 
 
 /*
-	Set the whole server info
+	Set the whole server info.
 */
-UniMaster.prototype.setServerInfo = function( serverInfo ) {
+UniMasterServiceProvider.prototype.setServerInfo = function( serverInfo ) {
 	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
 	this.serverInfo = serverInfo ;
 } ;
@@ -149,9 +124,9 @@ UniMaster.prototype.setServerInfo = function( serverInfo ) {
 
 
 /*
-	Update server info: update only provided keys
+	Update server info: update only provided keys.
 */
-UniMaster.prototype.updateServerInfo = function( serverInfo ) {
+UniMasterServiceProvider.prototype.updateServerInfo = function( serverInfo ) {
 	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
 	Object.assign( this.serverInfo , serverInfo ) ;
 } ;
@@ -161,24 +136,20 @@ UniMaster.prototype.updateServerInfo = function( serverInfo ) {
 /*
 	Send a server info to a client.
 */
-UniMaster.prototype.sendServerInfo = function( message ) {
-	var serverList = { ipv4List: [] , ipv6List: [] } ;
-	//var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
+UniMasterServiceProvider.prototype.sendServerInfo = function( message ) {
+	this.uniServer.sendResponseFor( message , this.serverInfo ) ;
+} ;
 
-	for ( let [ id , serverData ] of this.serverMap ) {
 
-		// Filtering should occurs here
 
-		if ( serverData.ipv4 ) {
-			serverList.ipv4List.push( serverData.ipv4 ) ;
-		}
-		else if ( serverData.ipv6 ) {
-			serverList.ipv4List.push( serverData.ipv6 ) ;
-		}
+/*
+	Notify master servers.
+*/
+UniMasterServiceProvider.prototype.notifyMasterServers = function( message ) {
+	for ( let server of this.masterServerList ) {
+		console.log( "Send hello to" , server ) ;
+		this.uniServer.sendHello( server , 'helo' ) ;
 	}
-
-	let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
-	this.uniServer.sendMessage( message.sender , response ) ;
 } ;
 
 

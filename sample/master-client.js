@@ -78,6 +78,12 @@ function UniMasterClient( masterServerList , params = {} ) {
 			perCommand: {
 				Rserv: {
 					model: masterData.serverList
+				} ,
+				Rinfo: {
+					referenceStrings: true ,
+					initialStringReferences: [
+						'service' , 'mod' , 'protocol' , 'hasPassword' , 'humans' , 'bots' , 'maxClients'
+					]
 				}
 			}
 		}
@@ -100,7 +106,7 @@ UniMasterClient.prototype.query = async function() {
 		serverSet = new Set() ;
 
 	var responseList = await Promise.map( this.masterServerList , dest => {
-		var responsePromise = Promise.fromThenable( this.uniClient.query( dest , 'serv' ) ) ;
+		var responsePromise = Promise.fromThenable( this.uniClient.sendQuery( dest , 'serv' ) ) ;
 		setTimeout( () => responsePromise.resolve( null ) , this.masterTimeout ) ;
 		return responsePromise.then( response => { masterResponseCount ++ ; return response ; } ).catch( () => null ) ;
 	} ) ;
