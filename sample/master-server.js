@@ -169,7 +169,7 @@ UniMaster.prototype.addServer = function( server , serverInfo ) {
 	}
 
 	//serverData.hostname = typeof serverInfo.hostname === 'string' ? serverInfo.hostname : '' ;
-	serverData.app = typeof serverInfo.app === 'string' ? serverInfo.app : '' ;
+	serverData.service = typeof serverInfo.service === 'string' ? serverInfo.service : '' ;
 	serverData.mod = typeof serverInfo.mod === 'string' ? serverInfo.mod : '' ;
 	serverData.protocol = + serverInfo.protocol || 0 ;
 	serverData.hasPassword = !! serverInfo.hasPassword ;

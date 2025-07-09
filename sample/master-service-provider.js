@@ -98,5 +98,90 @@ async function run( config ) {
 
 
 
+function UniMasterServiceProvider( masterServerList , params = {} ) {
+	// This is a server AND a client
+	this.uniServer = new UniProtocol( {
+		protocolSignature: 'UNM' ,
+		maxPacketSize: UniProtocol.IPv4_MTU ,
+		binaryDataParams: {
+			perCommand: {
+				Rinfo: {
+					referenceStrings: true ,
+					initialStringReferences: [
+						'service' , 'mod' , 'protocol' , 'hasPassword' , 'humans' , 'bots' , 'maxClients'
+					]
+				}
+			}
+		}
+	} ) ;
+
+	//this.masterTimeout = + params.masterTimeout || 2000 ;
+	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
+	this.serverInfo = params.serverInfo || {} ;
+}
+
+
+
+UniMaster.prototype.start = function() {
+	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
+	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
+
+	//console.log( "UniServer:" , server ) ;
+
+	this.uniServer.startServer() ;
+
+	// Debug:
+	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
+
+	this.uniServer.incoming.on( 'Qinfo' , message => this.sendServerInfo( message ) ) ;
+} ;
+
+
+
+/*
+	Set the whole server info
+*/
+UniMaster.prototype.setServerInfo = function( serverInfo ) {
+	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
+	this.serverInfo = serverInfo ;
+} ;
+
+
+
+/*
+	Update server info: update only provided keys
+*/
+UniMaster.prototype.updateServerInfo = function( serverInfo ) {
+	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
+	Object.assign( this.serverInfo , serverInfo ) ;
+} ;
+
+
+
+/*
+	Send a server info to a client.
+*/
+UniMaster.prototype.sendServerInfo = function( message ) {
+	var serverList = { ipv4List: [] , ipv6List: [] } ;
+	//var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
+
+	for ( let [ id , serverData ] of this.serverMap ) {
+
+		// Filtering should occurs here
+
+		if ( serverData.ipv4 ) {
+			serverList.ipv4List.push( serverData.ipv4 ) ;
+		}
+		else if ( serverData.ipv6 ) {
+			serverList.ipv4List.push( serverData.ipv6 ) ;
+		}
+	}
+
+	let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
+	this.uniServer.sendMessage( message.sender , response ) ;
+} ;
+
+
+
 cli() ;
 
