@@ -65,7 +65,7 @@ async function cli() {
 	//console.log( "Args:" , args ) ;
 
 	var masterClient = new UniMasterClient( [ { address: args.server , port: args.port } ] ) ;
-	masterClient.query() ;
+	masterClient.queryServers() ;
 } ;
 
 
@@ -95,15 +95,14 @@ function UniMasterClient( masterServerList , params = {} ) {
 
 
 
-UniMasterClient.prototype.query = async function() {
+UniMasterClient.prototype.queryServers = async function() {
 	this.uniClient.startClient() ;
 	
 	// Debug
 	this.uniClient.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
 	var masterResponseCount = 0 ,
-		serverList = [] ,
-		serverSet = new Set() ;
+		serverMap = new Map() ;
 
 	var responseList = await Promise.map( this.masterServerList , dest => {
 		var responsePromise = Promise.fromThenable( this.uniClient.sendQuery( dest , 'serv' ) ) ;
@@ -124,13 +123,19 @@ UniMasterClient.prototype.query = async function() {
 			else if ( server.ipv6 ) { serverId = '[' + server.ipv6 + ']:' + server.port ; }
 			else { continue ; }
 
-			if ( serverSet.has( serverId ) ) { continue ; }
-			serverSet.add( server ) ;
-			serverList.push( server ) ;
+			if ( serverMap.has( serverId ) ) { continue ; }
+			serverMap.set( serverId , { address: server , info: null } ) ;
 		}
 	}
 
-	this.displayServers( serverList ) ;
+	await Promise.map( serverMap.keys() , serverId => {
+		let server = serverMap.get( serverId ) ;
+		return this.uniClient.sendQuery( server.address , 'info' , undefined , { retries: 3 } )
+			.then( message => server.info = message.decodeData() )
+			.catch( error => server.error = error ) ;
+	} ) ;
+
+	this.displayServers( serverMap ) ;
 } ;
 
 
@@ -142,24 +147,26 @@ UniMasterClient.toServerList = function( data ) {
 		let serverBuffer = Buffer.from( serverArray ) ;
 		let ipv4 = UniProtocol.ip.toString( serverBuffer , 0 , 4 ) ;
 		let port = serverBuffer.readUInt16BE( 4 ) ;
-		serverList.push( { ipv4 , port } ) ;
+		serverList.push( { ipv4 , address: ipv4 , port } ) ;
 	}
 
 	for ( let serverArray of data.ipv6List ) {
 		let serverBuffer = Buffer.from( serverArray ) ;
 		let ipv6 = UniProtocol.ip.toString( serverBuffer , 0 , 16 ) ;
 		let port = serverBuffer.readUInt16BE( 16 ) ;
-		serverList.push( { ipv6 , port } ) ;
+		serverList.push( { ipv6 , address: ipv6 , port } ) ;
 	}
 
 	return serverList ;
-}
+} ;
 
 
 
-UniMasterClient.prototype.displayServers = function( serverList ) {
-	console.log( serverList ) ;
-}
+UniMasterClient.prototype.displayServers = function( serverMap ) {
+	for ( let [ serverId , serverData ] of serverMap ) {
+		console.log( serverId , serverData ) ;
+	}
+} ;
 
 
 

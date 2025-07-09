@@ -64,8 +64,12 @@ async function cli() {
 	var args = cliManager.run() ;
 	//console.log( "Args:" , args ) ;
 
-	var masterServiceProvider = new UniMasterServiceProvider( [ { address: args.server , port: args.port } ] ) ;
+	var masterServiceProvider = new UniMasterServiceProvider(
+		[ { address: args.server , port: args.port } ] ,
+		{ serverInfo: { service: 'q3' , mod: '' , protocol: 1 , hasPassword: false , humans: 2 , bots: 1 , maxClients: 16 } }
+	) ;
 	masterServiceProvider.start() ;
+	setInterval( () => masterServiceProvider.updateServerInfo( { humans: Math.round( Math.random() * 12 ) } ) , 5000 ) ;
 } ;
 
 
@@ -106,9 +110,9 @@ UniMasterServiceProvider.prototype.start = function() {
 	// Debug:
 	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
+	setTimeout( () => this.notifyMasterServers() , 50 ) ;
+	this.notifyTimer = setInterval( () => this.notifyMasterServers() , 10000 ) ;
 	this.uniServer.incoming.on( 'Qinfo' , message => this.sendServerInfo( message ) ) ;
-
-	this.notifyTimer = setInterval( () => this.notifyMasterServers() , 5000 ) ;
 } ;
 
 
@@ -137,6 +141,7 @@ UniMasterServiceProvider.prototype.updateServerInfo = function( serverInfo ) {
 	Send a server info to a client.
 */
 UniMasterServiceProvider.prototype.sendServerInfo = function( message ) {
+	console.log( "Received" , message.debugStr() , " => sending serverInfo" , this.serverInfo ) ;
 	this.uniServer.sendResponseFor( message , this.serverInfo ) ;
 } ;
 
