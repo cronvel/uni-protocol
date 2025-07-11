@@ -55,7 +55,7 @@ async function cli() {
 	//console.log( "Args:" , args ) ;
 
 	var client = new uniMaster.Client( [ { address: args.server , port: args.port } ] ) ;
-	client.queryAllServers() ;
+	client.getAllServiceProviders() ;
 }
 
 cli() ;

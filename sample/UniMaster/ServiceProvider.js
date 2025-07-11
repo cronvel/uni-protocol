@@ -57,7 +57,8 @@ function ServiceProvider( masterServerList , params = {} ) {
 
 	//this.masterTimeout = + params.masterTimeout || 2000 ;
 	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
-	this.serverInfo = params.serverInfo || {} ;
+	this.info = params.info || {} ;
+	this.infoChangedSinceLastNotify = true ;
 	this.notifyTimer = null ;
 }
 
@@ -76,9 +77,9 @@ ServiceProvider.prototype.start = function() {
 	// Debug:
 	this.uniServer.on( 'message' , message => { message.decodeData() ; log.info( "Received message: %s\n" , message.debugStr() ) ; } ) ;
 
-	setTimeout( () => this.notifyMasterServers() , 50 ) ;
-	this.notifyTimer = setInterval( () => this.notifyMasterServers() , 10000 ) ;
-	this.uniServer.incoming.on( 'Qinfo' , message => this.sendServerInfo( message ) ) ;
+	setTimeout( () => this.helloToMasterServers() , 50 ) ;
+	this.notifyTimer = setInterval( () => this.notifyToMasterServers() , 10000 ) ;
+	this.uniServer.incoming.on( 'Qinfo' , message => this.sendInfo( message ) ) ;
 } ;
 
 
@@ -86,9 +87,10 @@ ServiceProvider.prototype.start = function() {
 /*
 	Set the whole server info.
 */
-ServiceProvider.prototype.setServerInfo = function( serverInfo ) {
-	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
-	this.serverInfo = serverInfo ;
+ServiceProvider.prototype.setInfo = function( info ) {
+	if ( ! info || typeof info !== 'object' ) { return ; }
+	this.info = info ;
+	this.infoChangedSinceLastNotify = true ;
 } ;
 
 
@@ -96,9 +98,10 @@ ServiceProvider.prototype.setServerInfo = function( serverInfo ) {
 /*
 	Update server info: update only provided keys.
 */
-ServiceProvider.prototype.updateServerInfo = function( serverInfo ) {
-	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
-	Object.assign( this.serverInfo , serverInfo ) ;
+ServiceProvider.prototype.updateInfo = function( info ) {
+	if ( ! info || typeof info !== 'object' ) { return ; }
+	Object.assign( this.info , info ) ;
+	this.infoChangedSinceLastNotify = true ;
 } ;
 
 
@@ -106,20 +109,46 @@ ServiceProvider.prototype.updateServerInfo = function( serverInfo ) {
 /*
 	Send a server info to a client.
 */
-ServiceProvider.prototype.sendServerInfo = function( message ) {
-	log.hdebug( "Received %s => sending serverInfo %n" , message.debugStr() , this.serverInfo ) ;
-	this.uniServer.sendResponseFor( message , this.serverInfo ) ;
+ServiceProvider.prototype.sendInfo = function( message ) {
+	log.hdebug( "Received %s => sending info %n" , message.debugStr() , this.info ) ;
+	this.uniServer.sendResponseFor( message , this.info ) ;
 } ;
 
 
 
 /*
-	Notify master servers.
+	Notify master servers (Hello or Heartbeat, based on .infoChangedSinceLastNotify).
 */
-ServiceProvider.prototype.notifyMasterServers = function() {
+ServiceProvider.prototype.notifyToMasterServers = function() {
+	if ( this.infoChangedSinceLastNotify ) { return this.helloToMasterServers() ; }
+	this.heartbeatToMasterServers() ;
+} ;
+
+
+
+/*
+	Notify master servers (Hello).
+*/
+ServiceProvider.prototype.helloToMasterServers = function() {
 	for ( let server of this.masterServerList ) {
 		log.hdebug( "Send hello to %n" , server ) ;
 		this.uniServer.sendHello( server , 'helo' ) ;
 	}
+
+	this.infoChangedSinceLastNotify = false ;
+} ;
+
+
+
+/*
+	Notify master servers (Heartbeat).
+*/
+ServiceProvider.prototype.heartbeatToMasterServers = function() {
+	for ( let server of this.masterServerList ) {
+		log.hdebug( "Send heartbeat to %n" , server ) ;
+		this.uniServer.sendKeepAlive( server , 'hrtb' ) ;
+	}
+
+	this.infoChangedSinceLastNotify = false ;
 } ;
 

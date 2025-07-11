@@ -31,7 +31,7 @@
 const UniProtocol = require( '../..' ) ;
 const protocol = require( './protocol.js' ) ;
 
-//const Promise = require( 'seventh' ) ;
+const Promise = require( 'seventh' ) ;
 
 const Logfella = require( 'logfella' ) ;
 const log = Logfella.global.use( 'UniMaster' ) ;
@@ -68,7 +68,7 @@ module.exports = Client ;
 /*
 	Query Master Servers, then query Service Providers.
 */
-Client.prototype.queryAllServers = async function() {
+Client.prototype.getAllServiceProviders = async function() {
 	this.uniClient.startClient() ;
 
 	// Debug

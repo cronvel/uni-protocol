@@ -57,7 +57,7 @@ async function cli() {
 	var serviceProvider = new uniMaster.ServiceProvider(
 		[ { address: args.server , port: args.port } ] ,
 		{
-			serverInfo: {
+			info: {
 				service: 'q3' ,
 				mod: '' ,
 				protocol: 1 ,
@@ -69,7 +69,7 @@ async function cli() {
 		}
 	) ;
 	serviceProvider.start() ;
-	setInterval( () => serviceProvider.updateServerInfo( { humans: Math.round( Math.random() * 12 ) } ) , 5000 ) ;
+	setInterval( () => serviceProvider.updateInfo( { humans: Math.round( Math.random() * 12 ) } ) , 5000 + Math.round( Math.random() * 15000 ) ) ;
 }
 
 cli() ;
