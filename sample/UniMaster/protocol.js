@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
 	UniProtocol
 
@@ -29,34 +28,19 @@
 
 
 
-const uniMaster = require( './UniMaster/uniMaster.js' ) ;
-
-const cliManager = require( 'utterminal' ).cli ;
-const packageJson = require( '../package.json' ) ;
-
+const UniProtocol = require( '../..' ) ;
+const DataModel = UniProtocol.DataModel ;
+//const ClassMap = UniProtocol.ClassMap ;
 
 
-async function cli() {
-	/* eslint-disable indent */
-	cliManager.package( packageJson )
-		.usage( "<port> [--option1] [...]" )
-		//.app( "Get All Servers" )
-		//.noIntro
-		.helpOption.logOptions
-		.camel
-		.description( "Test UniProtocol server." )
-		.arg( 'server' , '127.0.0.1' ).string.mandatory
-			.description( "The server to connect to." )
-		.arg( 'port' , 1234 ).number.mandatory
-			.description( "The port to listen." ) ;
-	/* eslint-enable indent */
 
-	var args = cliManager.run() ;
-	//console.log( "Args:" , args ) ;
+const ipv4 = exports.ipv4 = new DataModel.FixedTypedArray( 'uint8' , 6 ) ;
+const ipv6 = exports.ipv6 = new DataModel.FixedTypedArray( 'uint8' , 18 ) ;
+const ipv4List = exports.ipv4List = new DataModel.TypedArray( ipv4 ) ;
+const ipv6List = exports.ipv6List = new DataModel.TypedArray( ipv6 ) ;
 
-	var client = new uniMaster.Client( [ { address: args.server , port: args.port } ] ) ;
-	client.queryAllServers() ;
-}
-
-cli() ;
+const serverList = exports.serverList = new DataModel.SealedObject( [
+	[ 'ipv4List' , ipv4List ] ,
+	[ 'ipv6List' , ipv6List ]
+] ) ;
 

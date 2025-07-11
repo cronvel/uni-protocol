@@ -27,20 +27,9 @@
 
 "use strict" ;
 
-//const path = require( 'path' ) ;
-//const fs = require( 'fs' ) ;
 
-const os = require( 'os' ) ;
 
-const UniProtocol = require( '..' ) ;
-
-const masterData = require( './master-data.js' ) ;
-
-const string = require( 'string-kit' ) ;
-const Promise = require( 'seventh' ) ;
-
-const termkit = require( 'terminal-kit' ) ;
-const term = termkit.terminal ;
+const uniMaster = require( './UniMaster/uniMaster.js' ) ;
 
 const cliManager = require( 'utterminal' ).cli ;
 const packageJson = require( '../package.json' ) ;
@@ -63,140 +52,9 @@ async function cli() {
 	var args = cliManager.run() ;
 	//console.log( "Args:" , args ) ;
 
-	var masterServer = new UniMaster( args ) ;
+	var masterServer = new uniMaster.MasterServer( args ) ;
 	masterServer.start() ;
-} ;
-
-
-
-function UniMaster( params ) {
-	this.uniServer = new UniProtocol( {
-		protocolSignature: 'UNM' ,
-		serverPort: params.port || 1234 ,
-		maxPacketSize: UniProtocol.IPv4_MTU ,
-		binaryDataParams: {
-			perCommand: {
-				Rserv: {
-					model: masterData.serverList
-				} ,
-				Rinfo: {
-					referenceStrings: true ,
-					initialStringReferences: [
-						'service' , 'mod' , 'protocol' , 'hasPassword' , 'humans' , 'bots' , 'maxClients'
-					]
-				}
-			}
-		}
-	} ) ;
-
-	this.serverMap = new Map() ;
 }
-
-
-
-UniMaster.prototype.start = function() {
-	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
-	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
-
-	//console.log( "UniServer:" , server ) ;
-
-	this.uniServer.startServer() ;
-
-	// Debug:
-	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
-
-	this.uniServer.incoming.on( 'Hhelo' , message => this.receiveHello( message ) ) ;
-	this.uniServer.incoming.on( 'Hbbye' , message => this.receiveBye( message ) ) ;
-	this.uniServer.incoming.on( 'Khrtb' , message => this.receiveHeartbeat( message ) ) ;
-	this.uniServer.incoming.on( 'Qserv' , message => this.sendServerList( message ) ) ;
-} ;
-
-
-
-/*
-	A server is signaling to the master.
-*/
-UniMaster.prototype.receiveHello = function( message ) {
-	this.addServer( message.sender , {} ) ;
-} ;
-
-
-
-/*
-	A server is signaling its shutdown to the master.
-*/
-UniMaster.prototype.receiveBye = function( message ) {
-	this.removeServer( message.sender ) ;
-} ;
-
-
-
-/*
-	Send a server-list to a client.
-*/
-UniMaster.prototype.sendServerList = function( message ) {
-	var serverList = { ipv4List: [] , ipv6List: [] } ;
-	//var serverList = { ipv4List: [[192,168,0,25]] , ipv6List: [[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]] } ;
-
-	for ( let [ id , serverData ] of this.serverMap ) {
-
-		// Filtering should occurs here
-
-		if ( serverData.ipv4 ) {
-			serverList.ipv4List.push( serverData.ipv4 ) ;
-		}
-		else if ( serverData.ipv6 ) {
-			serverList.ipv4List.push( serverData.ipv6 ) ;
-		}
-	}
-
-	//let response = this.uniServer.createMessage( 'R' , 'serv' , message.id , serverList ) ;
-	//this.uniServer.sendMessage( message.sender , response ) ;
-	this.uniServer.sendResponseFor( message , serverList ) ;
-} ;
-
-
-
-UniMaster.prototype.addServer = function( server , serverInfo ) {
-	console.log( "addServer():" , server , serverInfo ) ;
-	var serverData = {} ,
-		id = UniProtocol.common.getAddressId( server ) ;
-
-	if ( server.family === 'IPv4' ) {
-		let ipBuffer = Buffer.allocUnsafe( 6 ) ;
-		UniProtocol.ip.toBuffer( server.address , ipBuffer , 0 ) ;
-		ipBuffer.writeUInt16BE( server.port , 4 ) ;
-		serverData.ipv4 = ipBuffer ;
-	}
-	else if ( server.family === 'IPv6' ) {
-		let ipBuffer = Buffer.allocUnsafe( 18 ) ;
-		UniProtocol.ip.toBuffer( server.address , ipBuffer , 0 ) ;
-		ipBuffer.writeUInt16BE( server.port , 16 ) ;
-		serverData.ipv6 = ipBuffer ;
-	}
-
-	//serverData.hostname = typeof serverInfo.hostname === 'string' ? serverInfo.hostname : '' ;
-	serverData.service = typeof serverInfo.service === 'string' ? serverInfo.service : '' ;
-	serverData.mod = typeof serverInfo.mod === 'string' ? serverInfo.mod : '' ;
-	serverData.protocol = + serverInfo.protocol || 0 ;
-	serverData.hasPassword = !! serverInfo.hasPassword ;
-	serverData.humans = + serverInfo.humans || 0 ;
-	serverData.bots = + serverInfo.bots || 0 ;
-	serverData.maxClients = + serverInfo.maxClients || 0 ;
-
-	this.serverMap.set( id , serverData ) ;
-	console.log( "Added server:" , id , serverData ) ;
-} ;
-
-
-
-UniMaster.prototype.removeServer = function( server , serverInfo ) {
-	var id = UniProtocol.common.getAddressId( server ) ;
-	this.serverMap.delete( id ) ;
-	console.log( "Removed server" , id ) ;
-} ;
-
-
 
 cli() ;
 

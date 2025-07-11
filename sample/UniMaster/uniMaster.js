@@ -29,34 +29,7 @@
 
 
 
-const uniMaster = require( './UniMaster/uniMaster.js' ) ;
-
-const cliManager = require( 'utterminal' ).cli ;
-const packageJson = require( '../package.json' ) ;
-
-
-
-async function cli() {
-	/* eslint-disable indent */
-	cliManager.package( packageJson )
-		.usage( "<port> [--option1] [...]" )
-		//.app( "Get All Servers" )
-		//.noIntro
-		.helpOption.logOptions
-		.camel
-		.description( "Test UniProtocol server." )
-		.arg( 'server' , '127.0.0.1' ).string.mandatory
-			.description( "The server to connect to." )
-		.arg( 'port' , 1234 ).number.mandatory
-			.description( "The port to listen." ) ;
-	/* eslint-enable indent */
-
-	var args = cliManager.run() ;
-	//console.log( "Args:" , args ) ;
-
-	var client = new uniMaster.Client( [ { address: args.server , port: args.port } ] ) ;
-	client.queryAllServers() ;
-}
-
-cli() ;
+exports.MasterServer = require( './MasterServer.js' ) ;
+exports.ServiceProvider = require( './ServiceProvider.js' ) ;
+exports.Client = require( './Client.js' ) ;
 

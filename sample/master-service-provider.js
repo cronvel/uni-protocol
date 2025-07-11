@@ -27,19 +27,9 @@
 
 "use strict" ;
 
-//const os = require( 'os' ) ;
-//const path = require( 'path' ) ;
-//const fs = require( 'fs' ) ;
 
-const UniProtocol = require( '..' ) ;
 
-const masterData = require( './master-data.js' ) ;
-
-const string = require( 'string-kit' ) ;
-const Promise = require( 'seventh' ) ;
-
-const termkit = require( 'terminal-kit' ) ;
-const term = termkit.terminal ;
+const uniMaster = require( './UniMaster/uniMaster.js' ) ;
 
 const cliManager = require( 'utterminal' ).cli ;
 const packageJson = require( '../package.json' ) ;
@@ -64,100 +54,23 @@ async function cli() {
 	var args = cliManager.run() ;
 	//console.log( "Args:" , args ) ;
 
-	var masterServiceProvider = new UniMasterServiceProvider(
+	var serviceProvider = new uniMaster.ServiceProvider(
 		[ { address: args.server , port: args.port } ] ,
-		{ serverInfo: { service: 'q3' , mod: '' , protocol: 1 , hasPassword: false , humans: 2 , bots: 1 , maxClients: 16 } }
-	) ;
-	masterServiceProvider.start() ;
-	setInterval( () => masterServiceProvider.updateServerInfo( { humans: Math.round( Math.random() * 12 ) } ) , 5000 ) ;
-} ;
-
-
-
-function UniMasterServiceProvider( masterServerList , params = {} ) {
-	// This is a server AND a client
-	this.uniServer = new UniProtocol( {
-		protocolSignature: 'UNM' ,
-		maxPacketSize: UniProtocol.IPv4_MTU ,
-		binaryDataParams: {
-			perCommand: {
-				Rinfo: {
-					referenceStrings: true ,
-					initialStringReferences: [
-						'service' , 'mod' , 'protocol' , 'hasPassword' , 'humans' , 'bots' , 'maxClients'
-					]
-				}
+		{
+			serverInfo: {
+				service: 'q3' ,
+				mod: '' ,
+				protocol: 1 ,
+				hasPassword: false ,
+				humans: 2 ,
+				bots: 1 ,
+				maxClients: 16
 			}
 		}
-	} ) ;
-
-	//this.masterTimeout = + params.masterTimeout || 2000 ;
-	this.masterServerList = Array.isArray( masterServerList ) ? masterServerList : [] ;
-	this.serverInfo = params.serverInfo || {} ;
-	this.notifyTimer = null ;
+	) ;
+	serviceProvider.start() ;
+	setInterval( () => serviceProvider.updateServerInfo( { humans: Math.round( Math.random() * 12 ) } ) , 5000 ) ;
 }
-
-
-
-UniMasterServiceProvider.prototype.start = function() {
-	term( "My IP: %s\n" , UniProtocol.ip.address() ) ;
-	//term( "Interfaces: %Y\n" , os.networkInterfaces() ) ;
-
-	//console.log( "UniServer:" , server ) ;
-
-	this.uniServer.startServer() ;
-
-	// Debug:
-	this.uniServer.on( 'message' , message => { message.decodeData() ; term( "Received message: %s\n" , message.debugStr() ) ; } ) ;
-
-	setTimeout( () => this.notifyMasterServers() , 50 ) ;
-	this.notifyTimer = setInterval( () => this.notifyMasterServers() , 10000 ) ;
-	this.uniServer.incoming.on( 'Qinfo' , message => this.sendServerInfo( message ) ) ;
-} ;
-
-
-
-/*
-	Set the whole server info.
-*/
-UniMasterServiceProvider.prototype.setServerInfo = function( serverInfo ) {
-	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
-	this.serverInfo = serverInfo ;
-} ;
-
-
-
-/*
-	Update server info: update only provided keys.
-*/
-UniMasterServiceProvider.prototype.updateServerInfo = function( serverInfo ) {
-	if ( ! serverInfo || typeof serverInfo !== 'object' ) { return ; }
-	Object.assign( this.serverInfo , serverInfo ) ;
-} ;
-
-
-
-/*
-	Send a server info to a client.
-*/
-UniMasterServiceProvider.prototype.sendServerInfo = function( message ) {
-	console.log( "Received" , message.debugStr() , " => sending serverInfo" , this.serverInfo ) ;
-	this.uniServer.sendResponseFor( message , this.serverInfo ) ;
-} ;
-
-
-
-/*
-	Notify master servers.
-*/
-UniMasterServiceProvider.prototype.notifyMasterServers = function( message ) {
-	for ( let server of this.masterServerList ) {
-		console.log( "Send hello to" , server ) ;
-		this.uniServer.sendHello( server , 'helo' ) ;
-	}
-} ;
-
-
 
 cli() ;
 
